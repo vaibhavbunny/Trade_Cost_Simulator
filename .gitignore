@@ -25,5 +25,3 @@ env/
 *.log
 *.tmp
 
-# YAML or config secrets (if needed)
-*.yaml
