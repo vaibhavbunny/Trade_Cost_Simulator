@@ -140,13 +140,7 @@ Trade_Cost_Simulator/
 | Data Fetching   | `@st.cache_data` for slow/static APIs     |
 | Error Handling  | `try/except` for all critical blocks      |
 
----
 
-## 📄 License
-
-This project is released under the MIT License. See [LICENSE](LICENSE) for details.
-
----
 
 ## 👤 Author
 
@@ -155,14 +149,6 @@ This project is released under the MIT License. See [LICENSE](LICENSE) for detai
 📧 Available on request
 
 ---
-
-## 🧠 Acknowledgments
-
-* OKX API for free access to high-frequency crypto market data
-* scikit-learn for machine learning models
-* Streamlit for rapid interactive app development
-
-```
 
 
 
