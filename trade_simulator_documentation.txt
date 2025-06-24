@@ -1,6 +1,5 @@
 Trade Cost Simulator Documentation
 
-Overview
 The Trade Cost Simulator is designed to estimate realistic transaction costs in real time using L2 order book data streamed via WebSocket from OKX. It accounts for slippage, exchange fees, market impact, and execution latency. The system is optimized for low-latency environments and replicates institutional trade conditions with real-world constraints.
 
 1. Model Selection and Parameters
