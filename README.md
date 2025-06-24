@@ -1,6 +1,3 @@
-Here’s the full updated README.md content with the correct project directory structure reflecting `trade_data.csv` inside the `data/` folder:
-
-```markdown
 # 🧠 Trade Cost Simulator – Real-Time Crypto Transaction Cost Estimator
 
 A real-time crypto trade cost simulator built with Python, Streamlit, and WebSocket, designed to estimate slippage, market impact, fees, and execution latency using live order book data from OKX. Ideal for institutional-level simulations and quantitative research.
