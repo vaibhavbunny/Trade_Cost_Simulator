@@ -77,7 +77,7 @@ def main() -> None:
 
                 step_start = time.time()
                 quantile = best_params["slippage"]["quantile"]
-                slippage = estimate_slippage_quantile(order_book_side, quantity_usd, quantile=quantile,order_side=order_side)
+                slippage = estimate_slippage_quantile(order_book_side, quantity_usd, quantile=quantile, order_side=order_side)
                 log_latency("Slippage estimation", step_start)
 
                 step_start = time.time()
@@ -87,7 +87,7 @@ def main() -> None:
                 step_start = time.time()
                 mp = best_params["market_impact"]
                 market_impact = estimate_market_impact(
-                    order_book_side, quantity_usd, order_price, volatility=volatility,
+                    quantity_usd, order_price, volatility,
                     alpha=mp["alpha"], beta=mp["beta"], gamma=mp["gamma"],
                     eta=mp["eta"], risk_aversion=mp["risk_aversion"]
                 )
@@ -116,8 +116,8 @@ def main() -> None:
                 st.success("✅ Simulation Complete")
                 st.metric("📉 Expected Slippage", f"${slippage:.4f}")
                 st.metric("💸 Expected Fees", f"${fees:.4f}")
-                st.metric("📊 Expected Market Impact", f"${market_impact.item():.4f}")
-                st.metric("📦 Net Cost", f"${net_cost.item():.4f}")
+                st.metric("📊 Expected Market Impact", f"${market_impact:.4f}")
+                st.metric("📦 Net Cost", f"${net_cost:.4f}")
                 st.metric("⚖️ Maker/Taker Probability", f"{prob * 100:.2f}% {label}")
                 st.metric("⏱ Internal Latency", f"{latency:.4f} s")
 
@@ -130,6 +130,7 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 
 
 

@@ -26,10 +26,7 @@ except Exception as e:
 
 # Prepare features and labels
 X = df[['order_size_usd', 'spread', 'imbalance', 'order_side']].copy()
-
-# Convert 'order_side' categorical feature to numeric: buy=1, sell=0
 X['order_side'] = X['order_side'].apply(lambda x: 1 if x == 'buy' else 0)
-
 y = df['label']  # Target: 1 for taker, 0 for maker
 
 # Train-validation split
@@ -38,7 +35,7 @@ X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_st
 best_C = None
 best_loss = float('inf')
 
-# Hyperparameter tuning loop over C values
+# Hyperparameter tuning loop
 for C in config.get('maker_taker_params', {}).get('C_values', [0.1]):
     try:
         model = LogisticRegression(C=C, max_iter=1000)
@@ -53,28 +50,27 @@ for C in config.get('maker_taker_params', {}).get('C_values', [0.1]):
     except Exception as e:
         logger.warning(f"Error during model training with C={C}: {e}")
 
-# Load existing best_params.yaml if exists
+# Update best_params.yaml safely
 best_params_path = os.path.join(BASE_DIR, 'best_params.yaml')
 try:
     with open(best_params_path, 'r') as f:
-        best_params = yaml.safe_load(f) or {}
+        best_params_all = yaml.safe_load(f) or {}
 except FileNotFoundError:
-    best_params = {}
+    best_params_all = {}
 except Exception as e:
     logger.error(f"Failed to load best_params.yaml: {e}")
     raise
 
-# Update best params for maker_taker model
-best_params['maker_taker'] = {'C': best_C}
+best_params_all['maker_taker'] = {'C': best_C}
 
-# Save updated best params back to YAML
 try:
     with open(best_params_path, 'w') as f:
-        yaml.dump(best_params, f)
-    logger.info(f"Best maker_taker C saved: {best_C}")
+        yaml.safe_dump(best_params_all, f)
+    logger.info(f"✅ Best maker_taker C saved: {best_C}")
 except Exception as e:
     logger.error(f"Failed to save best_params.yaml: {e}")
     raise
+
 
 
 

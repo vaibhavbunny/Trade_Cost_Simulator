@@ -10,7 +10,6 @@ try:
 except Exception:
     BEST_QUANTILE = 0.9  # fallback default
 
-
 def _extract_levels(price_levels, order_side: str = "buy"):
     """
     Extract relevant order book side based on order type.

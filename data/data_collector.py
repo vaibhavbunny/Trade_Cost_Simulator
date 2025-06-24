@@ -7,6 +7,8 @@ import random
 import logging
 from pathlib import Path
 from typing import List, Optional
+from collections import deque
+import numpy as np
 
 # --- Config ---
 SYMBOL = "BTC-USDT"
@@ -18,22 +20,39 @@ orderbook = {"bids": [], "asks": []}
 orderbook_ready = False
 csv_lock = threading.Lock()
 
+# --- Price Window for Volatility ---
+PRICE_WINDOW_SIZE = 60
+price_window = deque(maxlen=PRICE_WINDOW_SIZE)
+
 # --- Logging Setup ---
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 def init_csv_file(path: Path):
-    """Initialize CSV file with headers."""
+    """Always initialize CSV file by overwriting any existing one."""
+    if path.exists():
+        logging.info(f"[INIT] Overwriting existing file: {path}")
+    else:
+        logging.info(f"[INIT] Creating new file: {path}")
+
     path.parent.mkdir(parents=True, exist_ok=True)
-    f = path.open("w", newline="")
+    f = path.open("w", newline="")  # Overwrite mode
     writer = csv.writer(f)
     writer.writerow([
-    "order_price", "order_side", "order_size_usd",
-    "best_bid", "best_ask", "bid_volume", "ask_volume",
-    "spread", "imbalance", "label", "price_levels"
+        "order_price", "order_side", "order_size_usd",
+        "best_bid", "best_ask", "bid_volume", "ask_volume",
+        "spread", "imbalance", "label", "price_levels", "volatility"
     ])
-
     return f, writer
+
+
+def update_volatility(mid_price: float) -> float:
+    """Update volatility using a rolling window of mid-prices."""
+    price_window.append(mid_price)
+    if len(price_window) >= 2:
+        log_returns = np.diff(np.log(price_window))
+        return np.std(log_returns) * np.sqrt(len(log_returns))
+    return 0.0
 
 
 def calculate_features(order_price: float, order_side: str, size: float) -> List[float]:
@@ -78,8 +97,6 @@ def process_orderbook(data: List[dict]) -> None:
     orderbook_ready = True
 
 
-# Replace your existing process_trade function with this:
-
 def process_trade(trades: List[dict], writer: csv.writer, file_obj) -> None:
     """Extract features from live trades and write labeled examples."""
     global orderbook
@@ -93,27 +110,30 @@ def process_trade(trades: List[dict], writer: csv.writer, file_obj) -> None:
                 size = float(trade["sz"])
                 side = "buy" if trade["side"] == "buy" else "sell"
 
+                best_bid = float(orderbook["bids"][0][0]) if orderbook["bids"] else 0.0
+                best_ask = float(orderbook["asks"][0][0]) if orderbook["asks"] else float('inf')
+                mid_price = (best_bid + best_ask) / 2 if best_bid and best_ask else price
+                volatility = update_volatility(mid_price)
+
                 features = calculate_features(price, side, size)
                 label = label_trade(price, features[3], features[4], side)
 
-                # 🔹 Convert L2 orderbook to JSON string
                 price_levels_snapshot = json.dumps({
-                    "bids": orderbook["bids"][:10],  # Top 10 levels
+                    "bids": orderbook["bids"][:10],
                     "asks": orderbook["asks"][:10]
                 })
 
-                # 🔹 Write real trade with price_levels
-                writer.writerow(features + [label, price_levels_snapshot])
+                # Real trade
+                writer.writerow(features + [label, price_levels_snapshot, volatility])
 
-                # 🔹 Simulated maker trade
+                # Synthetic maker trade
                 synthetic_features = simulate_synthetic_maker(side, size)
-                writer.writerow(synthetic_features + [price_levels_snapshot])
+                writer.writerow(synthetic_features + [price_levels_snapshot, volatility])
 
             except Exception as e:
                 logging.error(f"Error processing trade: {e}", exc_info=True)
 
-        file_obj.flush()  # Flush every batch for data safety
-
+        file_obj.flush()
 
 
 def on_message(ws, message: str) -> None:
@@ -176,7 +196,3 @@ if __name__ == "__main__":
         logging.info("Stopped by user")
     finally:
         csv_file.close()
-
-
-
-
